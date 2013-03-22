@@ -30,38 +30,38 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml
 		}
 		#endregion
 
-		#region DependencyProperty Map
-
+		#region DependencyProperty Layers
 
 		/// <summary>
-		/// Gets or sets the map whose layers it should display attribution for.
+		/// Gets or sets the layers to display attribution for.
 		/// </summary>
-		public Map Map
+		public IEnumerable<Layer> Layers
 		{
-			get { return GetValue(MapProperty) as Map; }
-			set { SetValue(MapProperty, value); }
+			get { return (IEnumerable<Layer>)GetValue(LayersProperty); }
+			set { SetValue(LayersProperty, value); }
 		}
 
 		/// <summary>
-		/// Identifies the <see cref="Map"/> dependency property.
+		/// Identifies the <see cref="Layers"/> Dependency Property.
 		/// </summary>
-		public static readonly DependencyProperty MapProperty =
-			DependencyProperty.Register("Map", typeof(Map), typeof(Attribution), new PropertyMetadata(null, OnMapPropertyChanged));
+		public static readonly DependencyProperty LayersProperty =
+			DependencyProperty.Register("Layers", typeof(IEnumerable<Layer>), typeof(Attribution), new PropertyMetadata(null, OnLayersPropertyChanged));
 
-		private static void OnMapPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+		private static void OnLayersPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
 		{
 			if (d is Attribution)
-				(d as Attribution).OnMapPropertyChanged(e.OldValue as Map, e.NewValue as Map);
+				(d as Attribution).OnLayersPropertyChanged(e.OldValue as IEnumerable<Layer>, e.NewValue as IEnumerable<Layer>);
 		}
 
-		private void OnMapPropertyChanged(Map oldMap, Map newMap)
+		private void OnLayersPropertyChanged(IEnumerable<Layer> oldLayers, IEnumerable<Layer> newLayers)
 		{
-			if (oldMap != null)
-				DetachLayersHandler(oldMap.Layers);
-			if (newMap != null)
-				AttachLayersHandler(newMap.Layers);
+			if (oldLayers != null)
+				DetachLayersHandler(oldLayers);
+			if (newLayers != null)
+				AttachLayersHandler(newLayers);
 			UpdateAttributionItems();
 		}
+
 		#endregion
 
 		#region Items Dependency Property
@@ -86,7 +86,7 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml
 		
 		#endregion
 
-		#region Map Event Handlers
+		#region Layer Event Handlers
 
 		private void DetachLayersHandler(IEnumerable<Layer> layers)
 		{
@@ -131,8 +131,8 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml
 		{
 			var oldItems = e.OldItems;
 			System.Collections.IEnumerable newItems = e.NewItems;
-			if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Reset)
-				newItems = Map.Layers;
+			if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Reset) //This only handles a Clear(), and not any other reset
+				newItems = Layers;
 			if (oldItems != null)
 				foreach (var item in oldItems)
 					DetachLayerHandler(item as Layer);
@@ -148,11 +148,11 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml
 
 		private void UpdateAttributionItems()
 		{
-			if (Map == null || Map.Layers == null)
+			if (Layers == null)
 				Items = null;
 			else
 			{
-				var visibleCopyrights = Map.Layers.Where(layer => layer.Visibility == Visibility.Visible).OfType<ICopyright>();
+				var visibleCopyrights = Layers.Where(layer => layer.Visibility == Visibility.Visible).OfType<ICopyright>();
 				Items = visibleCopyrights.Select(cpr => cpr.CopyrightText).Where(cpr => !string.IsNullOrEmpty(cpr))
 					.Select(cpr => cpr.Trim()).Distinct().ToList();
 			}
