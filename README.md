@@ -12,8 +12,11 @@ ArcGIS Toolkit for Windows Store apps includes:
 * `Attribution` : Displays copyright/attribution information for layers in your map.
 
 ## How Do I Use It?
+* Get the Github Repo by either cloning it or downloading the zip package from the master branch.
+* Add the ESRI.ArcGIS.Runtime.Toolkit project to your existing solution.
+* Right-click the project where you want to use the toolkit, select 'Add reference', and pick the toolkit project under the solutions tab.
+* Next register the xmlns namespace in the `Page` or `UserControl` where you want to use the control:
 
-Register the xmlns namespace:
 ```xml
   xmlns:esriTK="using:ESRI.ArcGIS.Runtime.Toolkit.Xaml" 
 ```
