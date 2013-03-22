@@ -194,7 +194,7 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml
 					if (string.IsNullOrEmpty(Label)) // Label is set with LayerID : keep it if not null
 						Label = result.LayerName;
 
-					Map map = LegendTree.Map;
+					double scale = LegendTree.Scale;
 
 					// Combine Layer and Service scale
 					double minScale = result.MinimumScale == 0.0 ? double.PositiveInfinity : result.MinimumScale;
@@ -212,7 +212,7 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml
 
 					if (result.LayerLegendInfos != null)
 					{
-						LayerItems = result.LayerLegendInfos.Select(info => new LayerItemViewModel(Layer, info, Description, map)).ToObservableCollection();
+						LayerItems = result.LayerLegendInfos.Select(info => new LayerItemViewModel(Layer, info, Description, scale)).ToObservableCollection();
 					}
 
 					if (result.LegendItemInfos != null)

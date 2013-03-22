@@ -48,12 +48,11 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml.Primitives
 		/// <param name="layer">The layer.</param>
 		/// <param name="layerLegendInfo">The layer legend info.</param>
 		/// <param name="defaultLayerDescription">The default layer description (= the map layer description).</param>
-		/// <param name="map">The map.</param>
-		internal LayerItemViewModel(Layer layer, LayerLegendInfo layerLegendInfo, string defaultLayerDescription, Map map)
+		/// <param name="scale">The scale.</param>
+		internal LayerItemViewModel(Layer layer, LayerLegendInfo layerLegendInfo, string defaultLayerDescription, double scale)
 			: this(layer)
 		{
 			Debug.Assert(layerLegendInfo != null);
-			Debug.Assert(map != null); // Needed to convert scale to resolution
 
 			SubLayerID = layerLegendInfo.SubLayerID;
 			Label = layerLegendInfo.LayerName;
@@ -80,7 +79,7 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml.Primitives
 
 			if (layerLegendInfo.LayerLegendInfos != null)
 			{
-				LayerItems = layerLegendInfo.LayerLegendInfos.Select(info => new LayerItemViewModel(layer, info, defaultLayerDescription, map)).ToObservableCollection();
+				LayerItems = layerLegendInfo.LayerLegendInfos.Select(info => new LayerItemViewModel(layer, info, defaultLayerDescription, scale)).ToObservableCollection();
 			}
 
 			if (layerLegendInfo.LegendItemInfos != null)
@@ -175,27 +174,7 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml.Primitives
 		}
 
 		#endregion
-
-		#region VisibleTimeExtent
-		private TimeExtent _visibleTimeExtent;
-		///<summary>
-		/// The time extent where the layer is visible.
-		///</summary>
-		public TimeExtent VisibleTimeExtent
-		{
-			get { return _visibleTimeExtent; }
-			set
-			{
-				if (_visibleTimeExtent != value)
-				{
-					_visibleTimeExtent = value;
-					OnPropertyChanged("VisibleTimeExtent");
-				}
-			}
-		}
 		
-		#endregion
-
 		#region IsEnabled
 		private bool _isEnabled = true;
 		/// <summary>
@@ -213,14 +192,6 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml.Primitives
 				if (value != _isEnabled)
 				{
 					_isEnabled = value;
-					//if (!IsMapLayer && Layer is ISublayerVisibilitySupport)
-					//{
-					//	(Layer as ISublayerVisibilitySupport).SetLayerVisibility(SubLayerID, value);
-					//	// some layers (such as cached dynamic layer) can refuse to change the sublayer visibilities
-					//	// so make a get to be sure to stay in sync
-					//	_isEnabled = (Layer as ISublayerVisibilitySupport).GetLayerVisibility(SubLayerID);
-					//}
-					//else 
 					if (Layer != null)
 						Layer.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
 					OnPropertyChanged("IsEnabled");
@@ -255,7 +226,7 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml.Primitives
 		#endregion
 
 		#region IsInScaleRange
-		bool _isInScaleRange = true;
+		private bool _isInScaleRange = true;
 		/// <summary>
 		/// Gets or sets a value indicating whether this instance is in the scale range to be visible.
 		/// </summary>
@@ -280,7 +251,7 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml.Primitives
 		#endregion
 
 		#region IsInTimeExtent
-		bool _isInTimeExtent = true;
+		private bool _isInTimeExtent = true;
 		/// <summary>
 		/// Gets or sets a value indicating whether this instance is in the time extent to be visible.
 		/// </summary>
@@ -305,7 +276,7 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml.Primitives
 		#endregion
 
 		#region IsBusy/BusyIndicatorVisibility
-		bool _isBusy;
+		private bool _isBusy;
 		/// <summary>
 		/// Gets a value indicating whether this the layer is currently loading
 		/// its legend.
@@ -361,7 +332,7 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml.Primitives
 		#endregion
 
 		#region LayerItems
-		ObservableCollection<LayerItemViewModel> _layerItems;
+		private ObservableCollection<LayerItemViewModel> _layerItems;
 		/// <summary>
 		/// The collection of <see cref="LayerItemViewModel"/> under this layer item.
 		/// </summary>
@@ -482,7 +453,7 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml.Primitives
 			}
 		}
 
-		void LegendItems_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+		private void LegendItems_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
 		{
 			if (e.OldItems != null)
 			{
@@ -505,11 +476,11 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml.Primitives
 
 		#region LayerItemsSource
 
-		IEnumerable<LegendItemViewModel> _layerItemsSource;
-		bool _isDirty = true;
+		private IEnumerable<LegendItemViewModel> _layerItemsSource;
+		private bool _isDirty = true;
 		/// <summary>
 		/// The enumeration of all legend items (LegendItemViewModel + LayerItemViewModel) displayed under this layer item.
-		/// This enumeration is depending on the <see cref="Legend.LayerItemsMode"/> property and on the <see cref="Legend.ShowOnlyVisibleLayers"/> property.
+		/// This enumeration is depending on the <see cref="Legend.ShowOnlyVisibleLayers"/> property.
 		/// </summary>
 		public override IEnumerable<LegendItemViewModel> LayerItemsSource
 		{
@@ -602,7 +573,7 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml.Primitives
 		{
 			get
 			{
-				return //Layer is GroupLayerBase ||
+				return Layer is GroupLayer ||
 				       (LayerItems != null && LayerItems.Count > 0 && !IsMapLayer);
 			}
 		}
@@ -810,11 +781,7 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml.Primitives
 		internal void UpdateLayerVisibilities(bool isParentVisible, bool isParentInScaleRange, bool isParentInTimeExtent)
 		{
 			bool isEnabled;
-
-			//if (!IsMapLayer && Layer is ISublayerVisibilitySupport)
-			//	isEnabled = (Layer as ISublayerVisibilitySupport).GetLayerVisibility(SubLayerID);
-			//else 
-				if (Layer != null)
+			if (Layer != null)
 				isEnabled = Layer.Visibility == Visibility.Visible;
 			else
 				isEnabled = true;
@@ -825,14 +792,14 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml.Primitives
 				OnPropertyChanged("IsEnabled");
 			}
 
+			double mapScale = (LegendTree != null) ? LegendTree.Scale : double.NaN;
+			
 			if (isParentInScaleRange)
 			{
-				var mapScale = LegendTree.Map.Scale;
 				// all ascendants are in scale range ==> Take care of resolution
-				if (LegendTree != null &&
-					LegendTree.Map != null && mapScale > 0.0)
+				if (mapScale > 0.0)
 				{
-					IsInScaleRange = !(MaximumScale > mapScale || MinimumScale < mapScale);
+					IsInScaleRange = double.IsNaN(mapScale) || !(MaximumScale > mapScale || MinimumScale < mapScale);
 				}
 			}
 			else
@@ -841,35 +808,14 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml.Primitives
 				IsInScaleRange = false;
 			}
 
-			if (isParentInTimeExtent)
-			{
-				// all ascendants are in time extent ==> Take care of Time extent
-				//if (LegendTree != null &&
-				//	LegendTree.Map != null && LegendTree.Map.TimeExtent != null && VisibleTimeExtent != null)
-				//{
-				//	IsInTimeExtent = VisibleTimeExtent.Intersects(LegendTree.Map.TimeExtent);
-				//}
-				//else
-				//{
-					IsInTimeExtent = true;
-				//}
-			}
-			else
-			{
-				// Parent not in time extent ==> layer can't be in time extent
-				IsInTimeExtent = false;
-			}
-
 			// A layer is visible if it's checked on, if all its ascendants are visible, if it's in scale range and if it's in time extent
 			bool isVisible = _isEnabled && isParentVisible && IsInScaleRange && IsInTimeExtent;
 
 			// Check if there is no initialization failure and if a tiled layer is using the same spatial reference as the map (bug1419)
 			if (isVisible && IsMapLayer && Layer != null)
 			{
-				//if (Layer.InitializationFailure != null)
-				//	isVisible = false;
-				//else if (LegendTree != null && LegendTree.Map != null && Layer is TiledLayer)
-				//	isVisible = SpatialReference.AreEqual(LegendTree.Map.SpatialReference, Layer.SpatialReference, true);
+				if (Layer.InitializationException != null)
+					isVisible = false;
 			}
 
 			IsVisible = isVisible;

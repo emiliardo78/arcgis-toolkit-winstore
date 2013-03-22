@@ -47,84 +47,62 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml
 
 		#endregion
 
-		#region Map
+		/// <summary>
+		/// Gets or sets the scale if filtering layers by their visible scale range.
+		/// </summary>
+		public double Scale
+		{
+			get { return (double)GetValue(ScaleProperty); }
+			set { SetValue(ScaleProperty, value); }
+		}
 
 		/// <summary>
-		/// Gets or sets the map whose layers it should display a legend for.
+		/// Identifies the <see cref="Scale"/> Dependency property.
 		/// </summary>
-		public Map Map
+		public static readonly DependencyProperty ScaleProperty =
+			DependencyProperty.Register("Scale", typeof(double), typeof(Legend), new PropertyMetadata(double.NaN, OnScalePropertyChanged));
+
+		private static void OnScalePropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
 		{
-			get { return GetValue(MapProperty) as Map; }
-			set { SetValue(MapProperty, value); }
+			((Legend)d).OnLayersPropertyChanged((double)e.NewValue);
 		}
 
-		/// /// <summary>
-		/// Identifies the <see cref="Map"/> dependency property.
-		/// </summary>
-		public static readonly DependencyProperty MapProperty =
-			DependencyProperty.Register("Map", typeof(Map), typeof(Legend), new PropertyMetadata(null, OnMapPropertyChanged));
-
-		private static void OnMapPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-		{
-			((Legend) d).OnMapPropertyChanged(e.NewValue as Map);
-		}
-
-		private void OnMapPropertyChanged(Map newMap)
+		private void OnLayersPropertyChanged(double scale)
 		{
 			if (!_isLoaded)
 				return; // defer initialization until all parameters are well known
 
-			_legendTree.Map = newMap;
-		}
-
-		#endregion
-
-		#region LayerItemsMode
-
-		#region Mode
-		/// <summary>
-		/// LayerItems mode enumeration defines the structure of the legend : Flat or Tree.
-		/// </summary>
-		public enum Mode
-		{
-			/// <summary>
-			/// Flat structure : LayerItemsSource returns the LayerItems leaves (i.e not the group layers nor the map layers with sub layers) and the LegendItems. 
-			/// <remarks>This is the default value.</remarks>
-			/// </summary>
-			Flat,
-			/// <summary>
-			/// Tree structure : LayerItemsSource returns a hierarchy of legend items taking care of the map layers and of the group layers. 
-			/// </summary>
-			Tree
-		};
-		#endregion
-
-		/// <summary>
-		/// Gets or sets the layer items mode
-		/// </summary>
-		public Mode LayerItemsMode
-		{
-			get { return (Mode)GetValue(LayerItemsModeProperty); }
-			set { SetValue(LayerItemsModeProperty, value); }
+			_legendTree.Scale = scale;
 		}
 
 		/// <summary>
-		/// Identifies the <see cref="LayerItemsModeProperty"/> dependency property.
+		/// Gets or sets the layers to display the legend for.
 		/// </summary>
-		public static readonly DependencyProperty LayerItemsModeProperty =
-			DependencyProperty.Register("LayerItemsMode", typeof(Mode), typeof(Legend), new PropertyMetadata(Mode.Flat, OnLayerItemsModePropertyChanged));
-
-
-		private static void OnLayerItemsModePropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+		public IEnumerable<Layer> Layers
 		{
-			((Legend) d).OnLayerItemsModePropertyChanged((Mode)e.NewValue);
+			get { return (IEnumerable<Layer>)GetValue(LayersProperty); }
+			set { SetValue(LayersProperty, value); }
 		}
 
-		private void OnLayerItemsModePropertyChanged(Mode newLayerItemsMode)
+		/// <summary>
+		/// Identifies the <see cref="Layers"/> Dependency property.
+		/// </summary>
+		public static readonly DependencyProperty LayersProperty =
+			DependencyProperty.Register("Layers", typeof(IEnumerable<Layer>), typeof(Legend), new PropertyMetadata(null, OnLayersPropertyChanged));
+
+		private static void OnLayersPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
 		{
-			_legendTree.LayerItemsMode = newLayerItemsMode;
+			((Legend)d).OnLayersPropertyChanged(e.NewValue as IEnumerable<Layer>);
 		}
-		#endregion
+
+		private void OnLayersPropertyChanged(IEnumerable<Layer> newLayers)
+		{
+			if (!_isLoaded)
+				return; // defer initialization until all parameters are well known
+
+			_legendTree.Layers = newLayers;
+		}
+
 
 		#region ShowOnlyVisibleLayers
 
@@ -148,7 +126,7 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml
 
 		private static void OnShowOnlyVisibleLayersPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
 		{
-			((Legend) d).OnShowOnlyVisibleLayersPropertyChanged((bool)e.NewValue);
+			((Legend)d).OnShowOnlyVisibleLayersPropertyChanged((bool)e.NewValue);
 		}
 
 		private void OnShowOnlyVisibleLayersPropertyChanged(bool newValue)
@@ -179,7 +157,6 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml
 		#region LayerItemsSource
 		/// <summary>
 		/// The enumeration of the legend items displayed at the first level of the legend control.
-		/// This enumeration is depending on the <see cref="Legend.LayerItemsMode"/> property and on the <see cref="Legend.ShowOnlyVisibleLayers"/> property.
 		/// </summary>
 		/// <value>The layer items source.</value>
 		public IEnumerable<LegendItemViewModel> LayerItemsSource
@@ -214,7 +191,7 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml
 
 		private static void OnLegendItemTemplateChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
 		{
-			((Legend) d).OnLegendItemTemplateChanged(e.NewValue as DataTemplate);
+			((Legend)d).OnLegendItemTemplateChanged(e.NewValue as DataTemplate);
 		}
 
 		private void OnLegendItemTemplateChanged(DataTemplate newDataTemplate)
@@ -242,7 +219,7 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml
 
 		private static void OnLayerTemplateChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
 		{
-			((Legend) d).OnLayerTemplateChanged(e.NewValue as DataTemplate);
+			((Legend)d).OnLayerTemplateChanged(e.NewValue as DataTemplate);
 		}
 
 		private void OnLayerTemplateChanged(DataTemplate newDataTemplate)
@@ -272,7 +249,7 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml
 
 		private static void OnReverseLayersOrderChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
 		{
-			((Legend) d).OnReverseLayersOrderChanged((bool)e.NewValue);
+			((Legend)d).OnReverseLayersOrderChanged((bool)e.NewValue);
 		}
 
 		private void OnReverseLayersOrderChanged(bool newReverseLayersOrder)
@@ -301,7 +278,7 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml
 
 		private static void OnMapLayerTemplateChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
 		{
-			((Legend) d).OnMapLayerTemplateChanged(e.NewValue as DataTemplate);
+			((Legend)d).OnMapLayerTemplateChanged(e.NewValue as DataTemplate);
 		}
 
 		private void OnMapLayerTemplateChanged(DataTemplate newDataTemplate)
@@ -337,15 +314,15 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml
 			{
 				_isLoaded = true;
 
-				if (Windows.ApplicationModel.DesignMode.DesignModeEnabled && (Map == null || Map.Layers == null || !Map.Layers.Any()))
+				if (Windows.ApplicationModel.DesignMode.DesignModeEnabled && (Layers == null || !Layers.Any()))
 				{
 					if (_legendTree.LayerItems == null)
 					{
-						// Create a basic hierachy for design :  Map Layer -> SubLayer -> LegendItemViewModel
+						// Create a basic hierarchy for design :  Map Layer -> SubLayer -> LegendItemViewModel
 						var legendItem1 = new LegendItemViewModel
 						{
 							Label = "LegendItem1",
-							Symbol = new SimpleMarkerSymbol { Style = SimpleMarkerStyle.Circle, Color = Colors.Red}
+							Symbol = new SimpleMarkerSymbol { Style = SimpleMarkerStyle.Circle, Color = Colors.Red }
 						};
 						var legendItem2 = new LegendItemViewModel
 						{
@@ -373,7 +350,7 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml
 				else
 				{
 					// Initialize the Map now that all parameters are well known
-					_legendTree.Map = Map;
+					_legendTree.Layers = Layers;
 				}
 			}
 		}
@@ -421,7 +398,7 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml
 			/// </summary>
 			/// <value>An System.Exception instance, if an error occurred during the refresh; otherwise null.</value>
 			public Exception Error { get; internal set; }
-		} 
+		}
 		#endregion
 	}
 }

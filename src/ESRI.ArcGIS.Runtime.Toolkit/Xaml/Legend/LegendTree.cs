@@ -106,55 +106,28 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml
 		}
 		#endregion
 
-		#region Map
-		private Map _map;
-		/// <summary>
-		/// Gets or sets the map that the legend control is buddied to.
-		/// </summary>
-		/// <value>The map.</value>
-		internal Map Map
+		private IEnumerable<Layer> _Layers;
+
+		internal IEnumerable<Layer> Layers
 		{
-			get
-			{
-				return _map;
-			}
-			set
-			{
-				if (_map != value)
-				{
-					if (_map != null)
-					{
-						_map.PropertyChanged -= Map_PropertyChanged;
-						_map.ExtentChanged -= MapOnViewportChanged;
-						if (_map.Layers != null)
-						{
-							if (_map.Layers is INotifyCollectionChanged)
-								(_map.Layers as INotifyCollectionChanged).CollectionChanged -= Layers_CollectionChanged;
-							foreach (var l in _map.Layers)
-								l.PropertyChanged -= Layer_PropertyChanged;
-						}
-					}
-
-					_map = value;
-
-					if (_map != null)
-					{
-						_map.PropertyChanged += Map_PropertyChanged;
-						_map.ExtentChanged += MapOnViewportChanged;
-						if (_map.Layers != null)
-						{
-							if (_map.Layers is INotifyCollectionChanged)
-								(_map.Layers as INotifyCollectionChanged).CollectionChanged += Layers_CollectionChanged;
-							foreach (var l in _map.Layers)
-								l.PropertyChanged += Layer_PropertyChanged;
-						}
-					}
-					UpdateMapLayerItems();
-				}
+			get { return _Layers; }
+			set {
+				if (_Layers is INotifyCollectionChanged)
+					(_Layers as INotifyCollectionChanged).CollectionChanged -= Layers_CollectionChanged;
+				_Layers = value;
+				if (_Layers is INotifyCollectionChanged)
+					(_Layers as INotifyCollectionChanged).CollectionChanged += Layers_CollectionChanged;
+				UpdateMapLayerItems();
 			}
 		}
 
-		#endregion
+		private double _Scale;
+
+		internal double Scale
+		{
+			get { return _Scale; }
+			set { _Scale = value; OnScaleChanged(); }
+		}
 
 		#region ShowOnlyVisibleLayers
 		private bool _showOnlyVisibleLayers = true;
@@ -238,32 +211,15 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml
 
 		private ThrottleTimer updateTimer;
 
-		private void MapOnViewportChanged(object sender, EventArgs e)
+		private void OnScaleChanged()
 		{
-			var map = sender as Map;
-			if (map != null && map.Extent != null)
+			//Update Layer Visibilities is expensive, so wait for the map to stop navigating so
+			//map navigation performance doesn't suffer from it.
+			if (updateTimer == null)
 			{
-				//Update Layer Visibilities is expensive, so wait for the map to stop navigating so
-				//map navigation performance doesn't suffer from it.
-				if (updateTimer == null)
-				{
-					updateTimer = new ThrottleTimer(50) { Action = UpdateLayerVisibilities };
-				}
-				updateTimer.Invoke();
+				updateTimer = new ThrottleTimer(50) { Action = UpdateLayerVisibilities };
 			}
-		}
-
-		private void Map_PropertyChanged(object sender, PropertyChangedEventArgs e)
-		{
-			//var map = sender as Map;
-			//if (map == null)
-			//	return;
-
-			//if (e.PropertyName == "TimeExtent")
-			//{
-			//	// May change some layer visibilities for layer managing TimeExtent
-			//	UpdateLayerVisibilities();
-			//}
+			updateTimer.Invoke();
 		}
 
 		private void Layers_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
@@ -324,9 +280,9 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml
 		{
 			var mapLayerItems = new ObservableCollection<LayerItemViewModel>();
 
-			if (Map != null)
+			if (Layers != null)
 			{
-				UpdateMapLayerItemsRecursive(mapLayerItems, Map.Layers);
+				UpdateMapLayerItemsRecursive(mapLayerItems, Layers);
 			}
 			LayerItems = mapLayerItems;
 		}
@@ -380,38 +336,12 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml
 
 		#region LayerItemsMode
 
-		private Legend.Mode _layerItemsMode = Legend.Mode.Flat;
-		internal Legend.Mode LayerItemsMode
-		{
-			get
-			{
-				return _layerItemsMode;
-			}
-			set
-			{
-				if (value != _layerItemsMode)
-				{
-					_layerItemsMode = value;
-					UpdateLayerItemsOptions();
-				}
-			}
-		}
-
 		private void UpdateLayerItemsOptions()
 		{
 			LayerItemsOpts layerItemsOptions;
 			bool returnsLegendItems = (LegendItemTemplate != null);
 
-			switch (LayerItemsMode)
-			{
-				case Legend.Mode.Tree:
-					layerItemsOptions = new LayerItemsOpts(true, true, returnsLegendItems, ShowOnlyVisibleLayers, ReverseLayersOrder);
-					break;
-
-				default:
-					layerItemsOptions = new LayerItemsOpts(false, false, returnsLegendItems, ShowOnlyVisibleLayers, ReverseLayersOrder);
-					break;
-			}
+			layerItemsOptions = new LayerItemsOpts(false, false, returnsLegendItems, ShowOnlyVisibleLayers, ReverseLayersOrder);
 
 			PropagateLayerItemsOptions(layerItemsOptions);
 		}
@@ -421,7 +351,7 @@ namespace ESRI.ArcGIS.Runtime.Toolkit.Xaml
 
 		/// <summary>
 		/// The throttle timer is useful for limiting the number of requests to a method if
-		/// the method is repeatly called many times but you only want the method raised once.
+		/// the method is repeatedly called many times but you only want the method raised once.
 		/// It delays raising the method until a set interval, and any previous calls to the
 		/// actions in that interval will be cancelled.
 		/// </summary>
