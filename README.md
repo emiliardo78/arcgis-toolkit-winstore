@@ -21,12 +21,19 @@ Register the xmlns namespace:
 <i>Note: Some of the following examples assumes an ArcGIS map control named 'MyMap' is present.</i>
 
 ####Legend
+Set the `Layers` property to the collection of layers you want to show legend for.
+If you only want to display layers that are visible at the current scale range, also set the `Scale` property. Set this to 'NaN' (or don't set it) to avoid filtering by layer scale visibility.
+Both of these properties are available for binding directly from the map. Example:
 ```xml
   <esriTK:Legend Layers="{Binding Layers, ElementName=MyMap}" 
     Scale="{Binding Scale, ElementName=MyMap}" />
 ```
+Other useful properties:
+* `ShowOnlyVisibleLayers` - Don't show legend for layers not currently visible
+* `ReverseLayersOrder` - Reverses the layer order to easily order layers so that layers that are on top in the map is showing first in the legend. If you want more control over the order, use a converter or bind the collection via your view model to create a more custom collection.
 
 ####Attribution
+Simply set the `Layers` property to those layers that you want to display attribution for. Note that the terms of use for many services requires you to display some form of attribution, and this control will make that easy for you.
 ```xml
   <esriTK:Attribution Layers="{Binding Layers, ElementName=MyMap}" />
 ```
