@@ -10,6 +10,7 @@ ArcGIS Toolkit for Windows Store apps includes:
 
 * `Legend` -  Displays a legend for a set of layers in your map.
 * `Attribution` : Displays copyright/attribution information for layers in your map.
+* `ScaleLine` : Displays current scale reference.
 
 ## How Do I Use It?
 * Get the Github Repo by either cloning it or downloading the zip package from the master branch.
@@ -39,6 +40,11 @@ Other useful properties:
 Simply set the `Layers` property to those layers that you want to display attribution for. Note that the terms of use for many services requires you to display some form of attribution, and this control will make that easy for you.
 ```xml
   <esriTK:Attribution Layers="{Binding Layers, ElementName=MyMap}" />
+```
+
+####ScaleLine
+```xml
+   <esriTK:ScaleLine Scale="{Binding Scale, ElementName=MyMap}" />
 ```
 
 ## Resources
