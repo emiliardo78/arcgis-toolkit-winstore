@@ -75,7 +75,7 @@ limitations under the License.
 
 A copy of the license is available in the repository's [license.txt]( https://raw.github.com/Esri/arcgis-toolkit-winstore/master/license.txt) file.
 
-[](Esri Tags: ArcGIS API WinStore WinRT)
-[](Esri Language: C#)
+[](Esri Tags: ArcGIS Runtime SDK for Windows Store apps WinRT)
+[](Esri Language: XAML C#)
 
 
