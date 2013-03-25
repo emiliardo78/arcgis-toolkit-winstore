@@ -49,7 +49,7 @@ Simply set the `Layers` property to those layers that you want to display attrib
 
 ## Resources
 
-* [ArcGIS API for Windows Store apps](http://developers.arcgis.com/windows-store/)
+* [ArcGIS Runtime SDK for Windows Store apps](http://developers.arcgis.com/en/windows-store/)
 
 ## Issues
 
